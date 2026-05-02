@@ -1,0 +1,92 @@
+/* PlantCareAI — Obsidian Theme Custom Styles */
+/* Most styling is handled by Tailwind config in base.html */
+
+/* Scan glow effects */
+.scan-glow {
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.15);
+}
+.scan-glow-tertiary {
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.15);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #09090b; }
+::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+/* Drop zone active state */
+.drop-active {
+    border-color: #a78bfa !important;
+    background: rgba(167, 139, 250, 0.05) !important;
+}
+
+/* Circular progress animation */
+@keyframes circleProgress {
+    from { stroke-dashoffset: 364.4; }
+}
+
+.circle-progress {
+    animation: circleProgress 1.5s ease-out forwards;
+}
+
+/* Fade in up animation */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+.animate-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.animate-delay-2 { animation-delay: 0.2s; opacity: 0; }
+.animate-delay-3 { animation-delay: 0.3s; opacity: 0; }
+.animate-delay-4 { animation-delay: 0.4s; opacity: 0; }
+
+/* Pulse glow for status */
+@keyframes pulseGlow {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
+    50% { opacity: 0.6; box-shadow: 0 0 8px currentColor; }
+}
+.pulse-dot { animation: pulseGlow 2s ease-in-out infinite; }
+
+/* Image hover reveal */
+.img-reveal:hover img {
+    filter: grayscale(0);
+    transform: scale(1.02);
+}
+
+/* Card hover lift */
+.card-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Skeleton loading */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+.skeleton {
+    background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* File input styling */
+input[type="file"]::file-selector-button {
+    background: #7c3aed;
+    color: #ede9fe;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-family: 'Geist', sans-serif;
+    cursor: pointer;
+    margin-right: 12px;
+    transition: background 0.2s;
+}
+input[type="file"]::file-selector-button:hover {
+    background: #6d28d9;
+}

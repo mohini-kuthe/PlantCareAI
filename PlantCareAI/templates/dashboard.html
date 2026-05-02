@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — PlantCareAI{% endblock %}
+
+{% block content %}
+<!-- Hero & Context -->
+<section class="mb-12 text-center md:text-left animate-fade-in-up">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant mb-6">
+        <span class="w-2 h-2 rounded-full bg-tertiary pulse-dot"></span>
+        <span class="text-xs font-medium text-secondary-fixed uppercase tracking-wider">Engine v2.4.0 Active</span>
+    </div>
+    <h1 class="text-4xl md:text-6xl font-black tracking-tighter text-on-background mb-4">
+        Precision Plant <span class="text-primary">Diagnostics.</span>
+    </h1>
+    <p class="text-on-surface-variant text-lg max-w-2xl leading-relaxed">
+        Upload a high-resolution image of a plant leaf to identify diseases, nutrient deficiencies, and health metrics using our proprietary computer vision models.
+    </p>
+</section>
+
+<!-- Main Workspace: Bento Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Central Dropzone (Primary) -->
+    <div class="lg:col-span-8 group animate-fade-in-up animate-delay-1">
+        <div id="drop-zone" class="relative h-full min-h-[400px] rounded-xl border-2 border-dashed border-outline-variant bg-surface-container-lowest hover:border-primary/50 transition-all duration-300 flex flex-col items-center justify-center p-8 text-center overflow-hidden cursor-pointer"
+             onclick="document.getElementById('file-input').click();">
+
+            <!-- Decor Background -->
+            <div class="absolute inset-0 opacity-10 pointer-events-none">
+                <img class="w-full h-full object-cover grayscale" alt="Decorative leaf background"
+                     src="{{ url_for('static', filename='images/bg.jpg') }}"/>
+            </div>
+
+            <div class="relative z-10 space-y-6" id="upload-prompt">
+                <div class="w-20 h-20 bg-surface-container-high rounded-full flex items-center justify-center mx-auto border border-outline-variant group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-on-background mb-2">Upload Leaf Image</h2>
+                    <p class="text-secondary-fixed">Drag and drop or click to browse files</p>
+                    <p class="text-xs text-outline mt-2 uppercase tracking-widest font-bold">Supports JPG, PNG (Max 10MB)</p>
+                </div>
+                <button type="button" class="px-8 py-3 bg-primary text-on-primary font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
+                        onclick="event.stopPropagation(); document.getElementById('file-input').click();">
+                    Select File
+                </button>
+            </div>
+
+            <!-- Drag overlay -->
+            <div id="drag-overlay" class="absolute inset-0 z-20 bg-primary/10 border-2 border-primary rounded-xl flex items-center justify-center hidden">
+                <div class="text-center">
+                    <span class="material-symbols-outlined text-5xl text-primary mb-2">cloud_upload</span>
+                    <p class="text-primary font-bold">Drop image here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Panels -->
+    <div class="lg:col-span-4 flex flex-col gap-6 animate-fade-in-up animate-delay-2">
+
+        <!-- Preview Area -->
+        <div class="bg-surface-container rounded-xl border border-outline-variant p-6 flex-1 flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-sm uppercase tracking-widest text-secondary-fixed">Live Preview</h3>
+                <span class="material-symbols-outlined text-outline">visibility</span>
+            </div>
+
+            <div id="preview-placeholder" class="flex-1 flex flex-col items-center justify-center border border-outline-variant rounded bg-surface-container-low border-dashed min-h-[160px]">
+                <span class="material-symbols-outlined text-4xl text-outline mb-2">image_not_supported</span>
+                <p class="text-xs text-outline font-medium">Waiting for input...</p>
+            </div>
+
+            <div id="preview-container" class="flex-1 hidden">
+                <img id="preview-image" class="w-full h-full object-cover rounded border border-outline-variant" alt="Preview"/>
+                <p id="preview-filename" class="text-xs text-secondary-fixed mt-2 truncate"></p>
+            </div>
+
+            <!-- Upload Form (hidden file input) -->
+            <form id="upload-form" action="/predict" method="POST" enctype="multipart/form-data">
+                <input type="file" name="file" id="file-input" accept=".jpg,.jpeg,.png" class="hidden" required/>
+            </form>
+
+            <button id="analyze-btn" type="button" onclick="submitForm()"
+                class="mt-6 w-full py-4 bg-primary-container text-on-primary-container font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 active:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled>
+                <span class="material-symbols-outlined">analytics</span>
+                Start Analysis
+            </button>
+        </div>
+
+        <!-- Latest Insights -->
+        <div class="bg-surface-container-high rounded-xl border border-outline-variant p-6">
+            <h3 class="font-bold text-sm uppercase tracking-widest text-secondary-fixed mb-4">Latest Insights</h3>
+            <div class="space-y-4">
+                {% if history and history|length > 0 %}
+                    {% for item in history[-2:]|reverse %}
+                    <div class="flex items-center gap-3 p-3 rounded bg-surface-container-lowest border border-outline-variant/50">
+                        <div class="w-10 h-10 rounded {{ 'bg-tertiary/20' if 'healthy' in item.prediction|lower else 'bg-error/20' }} flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined {{ 'text-tertiary' if 'healthy' in item.prediction|lower else 'text-error' }}">
+                                {{ 'check_circle' if 'healthy' in item.prediction|lower else 'warning' }}
+                            </span>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold truncate">{{ item.prediction.replace('_', ' ') }}</p>
+                            <p class="text-[10px] {{ 'text-tertiary' if 'healthy' in item.prediction|lower else 'text-error' }}">
+                                {{ 'Healthy' if 'healthy' in item.prediction|lower else 'Disease Detected' }} &bull; {{ (item.confidence * 100)|round(1) }}%
+                            </p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="flex items-center gap-3 p-3 rounded bg-surface-container-lowest border border-outline-variant/50">
+                        <div class="w-10 h-10 rounded bg-surface-container flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-outline">hourglass_empty</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-outline">No scans yet</p>
+                            <p class="text-[10px] text-outline">Upload an image to begin</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Bar -->
+<section class="mt-8 grid grid-cols-3 gap-4 animate-fade-in-up animate-delay-3">
+    <div class="p-4 bg-surface-container rounded-xl border border-outline-variant text-center">
+        <p class="text-2xl font-black text-on-background">{{ total }}</p>
+        <p class="text-[10px] text-secondary-fixed uppercase tracking-widest font-bold mt-1">Total Scans</p>
+    </div>
+    <div class="p-4 bg-surface-container rounded-xl border border-outline-variant text-center">
+        <p class="text-2xl font-black text-tertiary">{{ healthy }}</p>
+        <p class="text-[10px] text-secondary-fixed uppercase tracking-widest font-bold mt-1">Healthy</p>
+    </div>
+    <div class="p-4 bg-surface-container rounded-xl border border-outline-variant text-center">
+        <p class="text-2xl font-black text-error">{{ diseased }}</p>
+        <p class="text-[10px] text-secondary-fixed uppercase tracking-widest font-bold mt-1">Diseased</p>
+    </div>
+</section>
+
+<!-- Secondary Info Grid -->
+<section class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-up animate-delay-4">
+    <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant card-lift">
+        <span class="material-symbols-outlined text-primary mb-4" style="font-variation-settings: 'FILL' 1;">science</span>
+        <h4 class="font-bold mb-2">Spectral Analysis</h4>
+        <p class="text-sm text-on-surface-variant">Advanced algorithms detect color shifts invisible to the naked eye.</p>
+    </div>
+    <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant card-lift">
+        <span class="material-symbols-outlined text-primary mb-4" style="font-variation-settings: 'FILL' 1;">database</span>
+        <h4 class="font-bold mb-2">12M+ Data Points</h4>
+        <p class="text-sm text-on-surface-variant">Trained on the world's largest open-source plant pathology dataset.</p>
+    </div>
+    <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant card-lift">
+        <span class="material-symbols-outlined text-primary mb-4" style="font-variation-settings: 'FILL' 1;">bolt</span>
+        <h4 class="font-bold mb-2">Instant Reports</h4>
+        <p class="text-sm text-on-surface-variant">Get treatment recommendations in under 3 seconds.</p>
+    </div>
+</section>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const dragOverlay = document.getElementById('drag-overlay');
+    const previewPlaceholder = document.getElementById('preview-placeholder');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview-image');
+    const previewFilename = document.getElementById('preview-filename');
+    const analyzeBtn = document.getElementById('analyze-btn');
+
+    // Drag and drop
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropZone.addEventListener(evt, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragOverlay.classList.remove('hidden');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+        dropZone.addEventListener(evt, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragOverlay.classList.add('hidden');
+        });
+    });
+
+    dropZone.addEventListener('drop', e => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect(files[0]);
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', e => {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    function handleFileSelect(file) {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            alert('Please upload a JPG or PNG image.');
+            return;
+        }
+
+        // Validate file size (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File size must be under 10MB.');
+            return;
+        }
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = e => {
+            previewImage.src = e.target.result;
+            previewPlaceholder.classList.add('hidden');
+            previewContainer.classList.remove('hidden');
+            previewFilename.textContent = file.name;
+            analyzeBtn.disabled = false;
+            analyzeBtn.classList.add('scan-glow');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function submitForm() {
+        if (fileInput.files.length > 0) {
+            // Show loading overlay
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.remove('hidden');
+
+            // Animate status messages
+            const statusEl = document.getElementById('loading-status');
+            const messages = [
+                'Uploading image...',
+                'Pre-processing specimen...',
+                'Running CNN analysis...',
+                'Extracting features...',
+                'Generating diagnosis...'
+            ];
+            let i = 0;
+            const interval = setInterval(() => {
+                i = (i + 1) % messages.length;
+                statusEl.textContent = messages[i];
+            }, 1200);
+
+            document.getElementById('upload-form').submit();
+        }
+    }
+</script>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay hidden">
+    <div class="relative">
+        <div class="w-24 h-24 bg-surface-container-high rounded-full flex items-center justify-center border border-outline-variant scan-pulse scan-glow">
+            <span class="material-symbols-outlined text-5xl text-primary" style="font-variation-settings: 'FILL' 1;">biotech</span>
+        </div>
+    </div>
+    <div class="text-center">
+        <p class="text-lg font-bold text-on-background mb-1">Analyzing Specimen</p>
+        <p id="loading-status" class="text-sm text-secondary-fixed">Uploading image...</p>
+    </div>
+    <div class="w-64 h-1 bg-surface-container-high rounded-full overflow-hidden">
+        <div class="h-full bg-primary rounded-full progress-animate"></div>
+    </div>
+    <p class="text-[10px] text-outline uppercase tracking-widest mt-4">PlantCareAI Engine v2.4.0</p>
+</div>
+{% endblock %}

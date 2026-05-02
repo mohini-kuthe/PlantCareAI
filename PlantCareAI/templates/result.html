@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results — PlantCareAI{% endblock %}
+
+{% block wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="flex pt-16 min-h-screen">
+
+    <!-- SideNavBar -->
+    <aside class="hidden md:flex flex-col h-screen fixed left-0 top-16 w-64 border-r border-zinc-800 bg-[#0c0c0f] font-body text-sm z-40">
+        <div class="p-6 mb-4">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center">
+                    <span class="material-symbols-outlined text-violet-400">psychology</span>
+                </div>
+                <div>
+                    <p class="font-black text-violet-400 uppercase tracking-tighter">PlantCareAI</p>
+                    <p class="text-zinc-500 text-xs">Analysis Engine</p>
+                </div>
+            </div>
+            <nav class="space-y-2">
+                <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 hover:bg-zinc-800/50 hover:text-[#fafafa] transition-all duration-200" href="/dashboard">
+                    <span class="material-symbols-outlined">photo_camera</span>
+                    <span>Scan</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-zinc-800 text-violet-400 font-semibold transition-all duration-200" href="#">
+                    <span class="material-symbols-outlined">menu_book</span>
+                    <span>Results</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 hover:bg-zinc-800/50 hover:text-[#fafafa] transition-all duration-200" href="/history">
+                    <span class="material-symbols-outlined">history</span>
+                    <span>History</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 md:ml-64 overflow-y-auto p-4 md:p-8 bg-surface-container-lowest pb-20 md:pb-8">
+        <div class="max-w-6xl mx-auto">
+
+            <!-- Header -->
+            <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 animate-fade-in-up">
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight text-on-background mb-2">Analysis Results</h1>
+                    <p class="text-secondary-fixed text-sm">Processed just now &bull; Model v2.4.1</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="/dashboard" class="flex items-center gap-2 px-4 py-2 border border-outline-variant text-secondary-fixed text-sm rounded-lg hover:bg-surface-container-high transition-colors">
+                        <span class="material-symbols-outlined text-lg">arrow_back</span>
+                        New Scan
+                    </a>
+                </div>
+            </div>
+
+            <!-- Bento Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- LEFT: Uploaded Image -->
+                <div class="lg:col-span-7 bg-surface-container rounded-xl border border-outline-variant overflow-hidden flex flex-col animate-fade-in-up animate-delay-1">
+                    <div class="p-4 border-b border-outline-variant flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-widest text-zinc-500">Source Specimen</span>
+                        <span class="text-xs text-tertiary flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            Image Analyzed
+                        </span>
+                    </div>
+                    <div class="relative group flex-grow aspect-[4/3] lg:aspect-auto min-h-[300px]">
+                        <img class="w-full h-full object-contain bg-surface-container-lowest p-2" alt="Uploaded leaf specimen"
+                             src="/{{ image_path }}"/>
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#09090b]/80 to-transparent pointer-events-none"></div>
+                        <div class="absolute bottom-6 left-6 flex gap-3">
+                            <span class="bg-surface-container-highest/80 backdrop-blur px-3 py-1.5 rounded-full text-xs border border-outline-variant">Original Upload</span>
+                            {% if not is_healthy %}
+                            <span class="bg-error-container/80 backdrop-blur px-3 py-1.5 rounded-full text-xs border border-error/30 text-on-error-container">Disease Detected</span>
+                            {% else %}
+                            <span class="bg-tertiary-container/80 backdrop-blur px-3 py-1.5 rounded-full text-xs border border-tertiary/30 text-on-tertiary-container">Healthy Plant</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Analysis Data -->
+                <div class="lg:col-span-5 flex flex-col gap-6 animate-fade-in-up animate-delay-2">
+
+                    <!-- Result Identity Card -->
+                    <div class="bg-surface-container rounded-xl border border-outline-variant p-6 flex flex-col items-center text-center">
+                        <!-- Circular Progress SVG -->
+                        <div class="relative w-32 h-32 mb-6">
+                            <svg class="w-full h-full transform -rotate-90">
+                                <circle class="text-surface-container-high" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
+                                <circle class="text-primary circle-progress" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor"
+                                        stroke-dasharray="364.4" stroke-dashoffset="{{ 364.4 - (confidence * 364.4) }}" stroke-width="8" stroke-linecap="round"></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-2xl font-bold text-on-background">{{ (confidence * 100)|round(1) }}%</span>
+                                <span class="text-[10px] text-secondary-fixed uppercase tracking-widest font-medium">Confidence</span>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-secondary-fixed uppercase tracking-widest mb-1">Diagnosis</p>
+                        <h2 class="text-2xl md:text-3xl font-black {{ 'text-tertiary' if is_healthy else 'text-primary' }} tracking-tighter leading-tight mb-4">
+                            {{ prediction.replace('_', ' ') }}
+                        </h2>
+                        <div class="w-full h-px bg-outline-variant my-4"></div>
+                        <p class="text-on-surface-variant text-sm leading-relaxed mb-6">
+                            {{ info.description[:200] }}{% if info.description|length > 200 %}...{% endif %}
+                        </p>
+
+                        <a href="/details" class="w-full bg-primary text-on-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all">
+                            View Full Details
+                            <span class="material-symbols-outlined">arrow_forward</span>
+                        </a>
+                    </div>
+
+                    <!-- Bento Tiles -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-surface-container rounded-xl border border-outline-variant p-4">
+                            <span class="material-symbols-outlined text-tertiary mb-2">monitoring</span>
+                            <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Severity</p>
+                            <p class="text-lg font-bold text-on-background">{{ info.severity }}</p>
+                        </div>
+                        <div class="bg-surface-container rounded-xl border border-outline-variant p-4">
+                            <span class="material-symbols-outlined text-violet-400 mb-2">verified</span>
+                            <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Status</p>
+                            <p class="text-lg font-bold {{ 'text-tertiary' if is_healthy else 'text-error' }}">{{ 'Healthy' if is_healthy else 'Infected' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Remedy Card -->
+                    {% if not is_healthy %}
+                    <div class="bg-surface-container rounded-xl border border-outline-variant p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-tertiary-container flex items-center justify-center">
+                                <span class="material-symbols-outlined text-tertiary text-sm">medical_services</span>
+                            </div>
+                            <h3 class="font-bold text-on-background">Quick Remedy</h3>
+                        </div>
+                        <ul class="text-sm text-on-surface-variant space-y-2">
+                            {% for tip in info.treatment[:2] %}
+                            <li class="flex items-start gap-2">
+                                <span class="text-tertiary mt-0.5 text-xs">&bull;</span>
+                                {{ tip }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="bg-surface-container rounded-xl border border-outline-variant p-5">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-tertiary-container flex items-center justify-center">
+                                <span class="material-symbols-outlined text-tertiary text-sm">eco</span>
+                            </div>
+                            <h3 class="font-bold text-on-background">Plant Care Tips</h3>
+                        </div>
+                        <ul class="text-sm text-on-surface-variant space-y-2">
+                            {% for tip in info.treatment[:2] %}
+                            <li class="flex items-start gap-2">
+                                <span class="text-tertiary mt-0.5 text-xs">&bull;</span>
+                                {{ tip }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

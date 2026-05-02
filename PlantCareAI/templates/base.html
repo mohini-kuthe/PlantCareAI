@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}PlantCareAI{% endblock %}</title>
+    <meta name="description" content="PlantCareAI — AI-powered plant disease detection. Upload leaf images for instant diagnosis, treatment recommendations, and prevention protocols."/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary": "#001a12",
+                        "secondary-fixed": "#a1a1aa",
+                        "outline": "#52525b",
+                        "on-background": "#fafafa",
+                        "on-tertiary-fixed": "#003318",
+                        "surface-container-high": "#18181b",
+                        "secondary-fixed-dim": "#71717a",
+                        "on-primary-fixed-variant": "#5b21b6",
+                        "on-primary-fixed": "#2e1065",
+                        "error": "#ef4444",
+                        "surface-container-low": "#0f0f12",
+                        "surface-container-highest": "#1e1e22",
+                        "inverse-on-surface": "#09090b",
+                        "on-secondary-fixed-variant": "#3f3f46",
+                        "on-secondary-fixed": "#18181b",
+                        "tertiary-fixed": "#bbf7d0",
+                        "tertiary": "#34d399",
+                        "primary-fixed": "#ede9fe",
+                        "outline-variant": "#27272a",
+                        "primary-fixed-dim": "#c4b5fd",
+                        "surface-dim": "#0c0c0f",
+                        "on-primary": "#0a0012",
+                        "on-surface": "#fafafa",
+                        "tertiary-fixed-dim": "#6ee7b7",
+                        "secondary-container": "#27272a",
+                        "on-tertiary-fixed-variant": "#047857",
+                        "on-primary-container": "#ede9fe",
+                        "on-secondary-container": "#a1a1aa",
+                        "surface": "#0c0c0f",
+                        "on-tertiary-container": "#bbf7d0",
+                        "on-error": "#1a0000",
+                        "error-container": "#3b1111",
+                        "tertiary-container": "#065f46",
+                        "surface-variant": "#18181b",
+                        "on-surface-variant": "#a1a1aa",
+                        "on-error-container": "#fca5a5",
+                        "inverse-surface": "#fafafa",
+                        "surface-container": "#121215",
+                        "inverse-primary": "#5b21b6",
+                        "surface-tint": "#a78bfa",
+                        "secondary": "#71717a",
+                        "on-secondary": "#09090b",
+                        "surface-bright": "#18181b",
+                        "surface-container-lowest": "#09090b",
+                        "primary": "#a78bfa",
+                        "background": "#09090b",
+                        "primary-container": "#7c3aed"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    fontFamily: {
+                        headline: ["Geist"],
+                        body: ["Geist"],
+                        label: ["Geist"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Geist', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scan-glow { box-shadow: 0 0 20px rgba(167, 139, 250, 0.15); }
+        .scan-glow-tertiary { box-shadow: 0 0 20px rgba(52, 211, 153, 0.15); }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        /* Fade-in animation */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+        .animate-delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .animate-delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .animate-delay-3 { animation-delay: 0.3s; opacity: 0; }
+        .animate-delay-4 { animation-delay: 0.4s; opacity: 0; }
+        /* Pulse glow for status dots */
+        @keyframes pulseGlow { 0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; } 50% { opacity: 0.6; box-shadow: 0 0 8px currentColor; } }
+        .pulse-dot { animation: pulseGlow 2s ease-in-out infinite; }
+        /* Loading overlay */
+        .loading-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(9,9,11,0.92); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
+        @keyframes scanPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.15); opacity: 1; } }
+        .scan-pulse { animation: scanPulse 1.5s ease-in-out infinite; }
+        @keyframes progressBar { 0% { width: 0%; } 50% { width: 70%; } 90% { width: 90%; } 100% { width: 95%; } }
+        .progress-animate { animation: progressBar 4s ease-out forwards; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-background text-on-background selection:bg-primary/30 min-h-screen">
+
+    {% block body %}
+    <!-- TopNavBar -->
+    <header id="top-navbar" class="fixed top-0 w-full z-50 bg-[#09090b]/80 backdrop-blur-xl border-b border-zinc-800 flex justify-between items-center px-6 h-16">
+        <div class="flex items-center gap-8">
+            <a href="/dashboard" class="text-xl font-bold tracking-tighter text-violet-400 hover:text-violet-300 transition-colors">PlantCareAI</a>
+            <nav class="hidden md:flex gap-6 font-body tracking-tight text-[#fafafa]">
+                <a id="nav-dashboard" class="{{ 'text-violet-400 border-b-2 border-violet-400 pb-1' if active_page == 'dashboard' else 'text-zinc-400 hover:text-[#fafafa]' }} transition-colors" href="/dashboard">Dashboard</a>
+                <a id="nav-history" class="{{ 'text-violet-400 border-b-2 border-violet-400 pb-1' if active_page == 'history' else 'text-zinc-400 hover:text-[#fafafa]' }} transition-colors" href="/history">History</a>
+                <a id="nav-resources" class="text-zinc-400 hover:text-[#fafafa] transition-colors" href="#">Resources</a>
+            </nav>
+        </div>
+        <div class="flex items-center gap-4">
+            {% if session.get('user') %}
+            <span class="hidden md:inline text-xs text-zinc-500 font-medium">{{ session.get('user', 'User') }}</span>
+            {% endif %}
+            <a href="/logout" class="material-symbols-outlined text-zinc-400 hover:text-violet-400 transition-colors cursor-pointer" title="Logout">logout</a>
+        </div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="{% block wrapper_class %}pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto{% endblock %}">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- BottomNavBar (Mobile Only) -->
+    <nav id="bottom-navbar" class="md:hidden fixed bottom-0 w-full z-50 bg-[#09090b]/90 backdrop-blur-xl border-t border-zinc-800 flex justify-around items-center h-16">
+        <a class="flex flex-col items-center justify-center {{ 'text-violet-400' if active_page == 'dashboard' else 'text-zinc-500' }} active:scale-95 transition-transform" href="/dashboard">
+            <span class="material-symbols-outlined">home</span>
+            <span class="text-[10px] font-medium">Home</span>
+        </a>
+        <a class="flex flex-col items-center justify-center {{ 'text-violet-400' if active_page == 'history' else 'text-zinc-500' }} active:scale-95 transition-transform" href="/history">
+            <span class="material-symbols-outlined">history</span>
+            <span class="text-[10px] font-medium">History</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-zinc-500 active:scale-95 transition-transform" href="/dashboard">
+            <div class="p-2 bg-primary rounded-full -mt-8 shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined text-on-primary text-2xl">camera</span>
+            </div>
+            <span class="mt-1 text-[10px] font-medium">Identify</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-zinc-500 active:scale-95 transition-transform" href="#">
+            <span class="material-symbols-outlined">person</span>
+            <span class="text-[10px] font-medium">Profile</span>
+        </a>
+    </nav>
+    {% endblock %}
+
+</body>
+</html>
